@@ -15,7 +15,7 @@ app.use(function (req, res, next) {
 });
 
 
-
+// Basic get call to check connection from frontend
 app.get('/api/v1/checkConnection', (req, res) => {
     res.send("Connection OK");
 })
