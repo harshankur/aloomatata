@@ -38,8 +38,8 @@ app.post('/api/v1/split/include/range', async (req, res) => {
     var inputRangeFrom      = req.body.from;
     var inputRangeTo        = req.body.to;
 
-    var outputFileName      = `ir_${inputFile.name}`;
-    var outputFileLocation  = `./output/ir_${inputFile.name}`;
+    var outputFileName      = `${inputFile.name.substring(0, inputFile.name.length - 4)}_ir.pdf`;
+    var outputFileLocation  = `./output/${outputFileName}`;
 
     scissors(inputFileLocation)
     .range(inputRangeFrom, inputRangeTo)
@@ -76,11 +76,46 @@ app.post('/api/v1/split/include/range', async (req, res) => {
         inputPagesInInt.push(parseInt(inputPages[i]));
     }
 
-    var outputFileName      = `ip_${inputFile.name}`;
-    var outputFileLocation  = `./output/ip_${inputFile.name}`;
+    var outputFileName      = `${inputFile.name.substring(0, inputFile.name.length - 4)}_ip.pdf`;
+    var outputFileLocation  = `./output/${outputFileName}`;
 
     scissors(inputFileLocation)
     .pages(inputPagesInInt)
+    .pdfStream()
+    .pipe(fs.createWriteStream(outputFileLocation))
+    .on('finish', function(){
+      console.log("Successful");
+      res.download(outputFileLocation, outputFileName);
+    }).on('error',function(err){
+      throw err;
+    });
+})
+
+/**
+ * 
+ * Merge
+ * Request body
+ * 1. Input file1 in tag 'file1'
+ * 2. Input file2 in tag 'file2'
+ * 
+ */
+ app.post('/api/v1/merge', async (req, res) => {
+    var inputFile1          = await req.files.file1;
+    var inputFile1Location  = './input/' + inputFile1.name;
+    await inputFile1.mv(inputFile1Location);
+
+    var inputFile2          = await req.files.file2;
+    var inputFile2Location  = './input/' + inputFile2.name;
+    await inputFile2.mv(inputFile2Location);
+
+    var outputFileName      = `${inputFile1.name.substring(0, inputFile1.name.length - 4)}_merge_${inputFile2.name.substring(0, inputFile2.name.length - 4)}.pdf`;
+    var outputFileLocation  = `./output/${outputFileName}`;
+
+    var file1               = scissors(inputFile1Location);
+    var file2               = scissors(inputFile2Location);
+
+    scissors
+    .join(file1, file2)
     .pdfStream()
     .pipe(fs.createWriteStream(outputFileLocation))
     .on('finish', function(){
