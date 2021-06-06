@@ -20,6 +20,16 @@ app.get('/api/v1/checkConnection', (req, res) => {
     res.send("Connection OK");
 })
 
+
+/**
+ * 
+ * Split -> Include -> Range
+ * Request body
+ * 1. Input file in tag 'file'
+ * 2. Range from in tag 'from'
+ * 3. Range to in tag 'to'
+ * 
+ */
 app.post('/api/v1/split/include/range', async (req, res) => {
     var inputFile           = await req.files.file;
     var inputFileLocation   = './input/' + inputFile.name;
@@ -33,6 +43,44 @@ app.post('/api/v1/split/include/range', async (req, res) => {
 
     scissors(inputFileLocation)
     .range(inputRangeFrom, inputRangeTo)
+    .pdfStream()
+    .pipe(fs.createWriteStream(outputFileLocation))
+    .on('finish', function(){
+      console.log("Successful");
+      res.download(outputFileLocation, outputFileName);
+    }).on('error',function(err){
+      throw err;
+    });
+})
+
+
+/**
+ * 
+ * Split -> Include -> Pages
+ * Request body
+ * 1. Input file in tag 'file'
+ * 2. Pages in tag 'pages'
+ * 
+ */
+ app.post('/api/v1/split/include/pages', async (req, res) => {
+    var inputFile           = await req.files.file;
+    var inputFileLocation   = './input/' + inputFile.name;
+    await inputFile.mv(inputFileLocation);
+
+    var inputPages          = req.body.pages;
+    inputPages              = inputPages.split(',');
+
+    var inputPagesInInt     = [];
+
+    for (var i = 0; i < inputPages.length; i++) {
+        inputPagesInInt.push(parseInt(inputPages[i]));
+    }
+
+    var outputFileName      = `ip_${inputFile.name}`;
+    var outputFileLocation  = `./output/ip_${inputFile.name}`;
+
+    scissors(inputFileLocation)
+    .pages(inputPagesInInt)
     .pdfStream()
     .pipe(fs.createWriteStream(outputFileLocation))
     .on('finish', function(){
