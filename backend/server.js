@@ -21,6 +21,11 @@ app.get('/api/v1/checkConnection', (req, res) => {
 })
 
 
+app.get('/', (req, res) => {
+  res.sendFile(__dirname+'/index.html');
+})
+
+
 /**
  * 
  * Split -> Include -> Range
